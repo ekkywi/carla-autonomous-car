@@ -36,28 +36,101 @@ Proyek ini adalah framework pengembangan **kendaraan otonom (autonomous car)** b
 
 ```
 carla-autonomous-car/
-├── README.md
-├── requirements.txt
-├── environment.yml                             # opsional, jika pakai conda
-├── data/
-│   ├── nuscenes/                               # dataset nuScenes asli
-│   ├── carla_images/                           # hasil capture kamera CARLA
-│   ├── yolo_dataset/                           # dataset siap training YOLOv8
-│   └── yolo_labels/                            # labeling YOLO
-├── models/
-│   └── best.pt                                 # model YOLOv8 hasil training
-├── scripts/
-│   ├── generate_nuscnenes_image_mapping.py     # generate image mapping
-│   ├── generate_yolo_labels_nuscenes_3.py      # generate YOLO label
-│   ├── split_and_copy_yolo_nuscenes.py         # split data persiapan train YOLO
-│   └── train.py                                # train YOLOv8
-├── carla_api/
+├── README.md                         # Dokumentasi utama proyek
+├── requirements.txt                  # Daftar dependensi pip
+├── environment.yml                   # File environment Conda (opsional)
+│
+├── config/                           # 🔧 File konfigurasi simulasi dan training
+│   ├── config_camera.yaml
+│   ├── config_lidar.yaml
+│   ├── config_radar.yaml
+│   └── class_mapping.yaml            # Mapping class ke ID numerik
+│
+├── data/                             # 📦 Semua data (mentah, olahan, training)
+│   ├── raw/                          # 📂 Data asli tanpa modifikasi
+│   │   ├── nuscenes/                 # Dataset asli nuScenes
+│   │   └── carla/                    # Hasil sim CARLA mentah (gambar, pcd, radar)
+│   │
+│   ├── processed/                    # 📂 Data hasil preprocessing
+│   │   ├── nuscenes/
+│   │   │   ├── camera/
+│   │   │   ├── lidar/
+│   │   │   ├── radar/
+│   │   │   └── annotations/         # Bounding box, metadata
+│   │   └── carla/
+│   │       ├── camera/
+│   │       ├── lidar/
+│   │       ├── radar/
+│   │       └── annotations/
+│   │
+│   ├── datasets/                     # 📂 Dataset siap training, dipisah per sensor
+│   │   ├── camera/                   # Dataset dari kamera (RGB)
+│   │   │   ├── images/
+│   │   │   │   ├── train/
+│   │   │   │   └── val/
+│   │   │   └── labels/
+│   │   │       ├── train/
+│   │   │       └── val/
+│   │   │
+│   │   ├── lidar/                    # Dataset dari LiDAR (point cloud)
+│   │   │   ├── pointclouds/
+│   │   │   │   ├── train/
+│   │   │   │   └── val/
+│   │   │   └── labels/
+│   │   │       ├── train/
+│   │   │       └── val/
+│   │   │
+│   │   ├── radar/                    # Dataset dari radar
+│   │   │   ├── raw/
+│   │   │   │   ├── train/
+│   │   │   │   └── val/
+│   │   │   └── labels/
+│   │   │       ├── train/
+│   │   │       └── val/
+│   │   │
+│   │   └── fusion/                   # Dataset untuk model fusi multi-sensor
+│   │       ├── inputs/              # Gabungan kamera + lidar + radar per frame
+│   │       └── labels/
+│   │           ├── train/
+│   │           └── val/
+│   │
+│   ├── visualizations/              # 📊 Hasil visualisasi (bounding box, heatmap, dsb)
+│   │   ├── camera/
+│   │   ├── lidar/
+│   │   ├── radar/
+│   │   └── fusion/
+│   │
+│   └── meta/                        # 📑 Metadata global
+│       ├── train_val_split.json
+│       └── sensor_calibration.json
+│
+├── models/                          # 🧠 Model hasil training
+│   ├── yolov8_camera.pt
+│   ├── yolov8_lidar.pt
+│   ├── yolov8_radar.pt
+│   └── fusion_model.pt
+│
+├── scripts/                         # ⚙️ Script Python untuk semua tahapan
+│   ├── preprocessing/
+│   │   ├── extract_nuscenes.py
+│   │   ├── preprocess_carla.py
+│   │   └── convert_to_yolo.py
+│   │
+│   ├── training/
+│   │   └── train_yolo.py
+│   │
+│   ├── fusion/
+│   │   └── build_fusion_dataset.py
+│   │
+│   └── visualization/
+│       └── visualize_bboxes.py
+│
+├── carla_api/                       # 🔌 Komunikasi dengan CARLA simulator
 │   ├── client.py
 │   ├── sensor.py
 │   ├── vehicle.py
 │   └── utils.py
-└── config/
-    └── config.yaml                             # konfigurasi simulasi, model, sensor
+
 ```
 
 ---
