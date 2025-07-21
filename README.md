@@ -44,7 +44,7 @@ carla-autonomous-car/
 │   ├── config_camera.yaml
 │   ├── config_lidar.yaml
 │   ├── config_radar.yaml
-│   └── class_mapping.yaml            # Mapping class ke ID numerik
+│   └── class_mapping_nuscenes.yaml   # Mapping class ke ID numerik dari data NuScenes
 │
 ├── data/                             # 📦 Semua data (mentah, olahan, training)
 │   ├── raw/                          # 📂 Data asli tanpa modifikasi

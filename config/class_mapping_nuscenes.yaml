@@ -1,0 +1,26 @@
+# Mapping kelas NuScenes ke ID numerik yang digunakan untuk training/deteksi
+# Sumber referensi: https://www.nuscenes.org/object-detection
+
+human.pedestrian.adult: 0
+human.pedestrian.child: 1
+human.pedestrian.wheelchair: 2
+human.pedestrian.stroller: 3
+human.pedestrian.personal_mobility: 4
+human.pedestrian.police_officer: 5
+human.pedestrian.construction_worker: 6
+animal: 7
+vehicle.car: 8
+vehicle.motorcycle: 9
+vehicle.bicycle: 10
+vehicle.bus.bendy: 11
+vehicle.bus.rigid: 12
+vehicle.truck: 13
+vehicle.construction: 14
+vehicle.emergency.ambulance: 15
+vehicle.emergency.police: 16
+vehicle.trailer: 17
+movable_object.barrier: 18
+movable_object.trafficcone: 19
+movable_object.pushable_pullable: 20
+movable_object.debris: 21
+static_object.bicycle_rack: 22
