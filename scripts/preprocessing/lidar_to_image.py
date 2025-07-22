@@ -16,28 +16,21 @@ Dependencies:
 
 Cara pakai:
 $ python lidar_to_image.py
-
 """
 
 import os
 import numpy as np
 from PIL import Image
 
-# ========== PARAMETER ==========
-# Ubah path sesuai lokasi LIDAR hasil ekstrakmu
 INPUT_LIDAR_DIR = '../../data/processed/nuscenes/lidar/LIDAR_TOP'
 OUTPUT_IMG_DIR = '../../data/processed/nuscenes/lidar/lidar_bev_img'
 
-# Parameter BEV (ubah sesuai kebutuhan)
-BEV_RES = 0.2      # Resolusi BEV (meter per pixel)
-X_MIN, X_MAX = -50, 50  # Area BEV (meter) sumbu X
-Y_MIN, Y_MAX = -50, 50  # Area BEV (meter) sumbu Y
+BEV_RES = 0.15625  # (X_MAX-X_MIN)/RES = 100/0.15625 = 640
+X_MIN, X_MAX = -50, 50
+Y_MIN, Y_MAX = -50, 50
+IMG_SIZE = (640, 640)
 
 def pointcloud_to_bev(points, x_min, x_max, y_min, y_max, res):
-    """
-    Konversi point cloud (Nx3) ke citra BEV (Bird's Eye View).
-    Setiap pixel = 255 jika ada point, 0 jika tidak.
-    """
     mask = (points[:, 0] > x_min) & (points[:, 0] < x_max) & (points[:, 1] > y_min) & (points[:, 1] < y_max)
     pc = points[mask]
     x_bins = int((x_max - x_min) / res)
@@ -46,9 +39,10 @@ def pointcloud_to_bev(points, x_min, x_max, y_min, y_max, res):
     if pc.shape[0] > 0:
         x_indices = ((pc[:, 0] - x_min) / res).astype(int)
         y_indices = ((pc[:, 1] - y_min) / res).astype(int)
-        # Filter index supaya tidak keluar dari area
         valid = (x_indices >= 0) & (x_indices < x_bins) & (y_indices >= 0) & (y_indices < y_bins)
         bev_img[y_indices[valid], x_indices[valid]] = 255
+    else:
+        print("[WARNING] BEV empty for current file.")
     bev_img = np.flipud(bev_img)
     return bev_img
 
@@ -60,17 +54,18 @@ def process_lidar_folder(input_dir, output_dir):
     for fname in files:
         fpath = os.path.join(input_dir, fname)
         try:
-            # nuScenes lidar: binary float32 [x, y, z, intensity]
             points = np.fromfile(fpath, dtype=np.float32)
             if points.shape[0] % 4 != 0:
                 print(f"[WARNING] File {fname} size not divisible by 4. Skip.")
                 continue
-            points = points.reshape(-1, 4)[:, :3]  # ambil x,y,z
+            points = points.reshape(-1, 4)[:, :3]
+            print(f"[INFO] {fname}: {points.shape[0]} points")
         except Exception as e:
             print(f"[ERROR] Failed to read {fname}: {e}")
             continue
         bev_img = pointcloud_to_bev(points, X_MIN, X_MAX, Y_MIN, Y_MAX, BEV_RES)
-        out_imgname = fname.replace('.bin', '.png').replace('.pcd', '.png')
+        # Output BEV sudah 640x640, tidak perlu resize lagi
+        out_imgname = "bev_" + fname.replace('.bin', '.png').replace('.pcd', '.png')
         out_imgpath = os.path.join(output_dir, out_imgname)
         Image.fromarray(bev_img).save(out_imgpath)
         print(f"[INFO] Saved BEV image: {out_imgpath}")
