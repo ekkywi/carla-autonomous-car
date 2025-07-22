@@ -206,5 +206,5 @@ Lihat file LICENSE untuk informasi lebih lanjut.
 
 Dikembangkan oleh:  
 **Yon Ekky Wijayanto**  
-📧 ekky@example.com  
-🌐 [LinkedIn](#)
+📧 yonekkywijayanto@outlook.com
+🌐 [LinkedIn](https://www.linkedin.com/in/yon-ekky-wijayanto-7008ab295/)

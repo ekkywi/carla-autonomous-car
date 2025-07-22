@@ -1,0 +1,25 @@
+# Python virtual environment
+.venv/
+
+# Ignore all content inside data folder
+data/
+
+# Keep the folder but ignore its contents:
+data/*
+!data/.gitkeep
+
+# Ignore typical dataset files
+*.bin
+*.pcd
+*.png
+*.jpg
+*.jpeg
+*.npy
+*.npz
+*.json
+*.csv
+*.txt
+
+# Ignore processed nuscenes and raw nuscenes data
+data/processed/nuscenes/
+data/raw/nuscenes/

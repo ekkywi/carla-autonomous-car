@@ -13,9 +13,9 @@ from nuscenes.nuscenes import NuScenes
 from tqdm import tqdm
 
 # Path ke dataset nuScenes asli
-DATAROOT = '/home/ekky/projects/carla-autonomous-car/data/nuscenes'
+DATAROOT = '../../data/raw/nuscenes'
 # Path output data hasil extract
-OUTPUT_ROOT = '/home/ekky/projects/carla-autonomous-car/data/processed/nuscenes'
+OUTPUT_ROOT = '../../data/processed/nuscenes'
 
 CAMERAS = [
     'CAM_FRONT',
@@ -36,16 +36,18 @@ RADARS = [
 ]
 
 def ensure_dirs():
-    """Buat folder output jika belum ada."""
-    for sensor in CAMERAS + LIDARS + RADARS:
-        os.makedirs(os.path.join(OUTPUT_ROOT, 'camera', sensor), exist_ok=True)
-        os.makedirs(os.path.join(OUTPUT_ROOT, 'lidar', sensor), exist_ok=True)
-        os.makedirs(os.path.join(OUTPUT_ROOT, 'radar', sensor), exist_ok=True)
+    # Buat folder output hanya sesuai sensor & kategori.
+    for cam in CAMERAS:
+        os.makedirs(os.path.join(OUTPUT_ROOT, 'camera', cam), exist_ok=True)
+    for lidar in LIDARS:
+        os.makedirs(os.path.join(OUTPUT_ROOT, 'lidar', lidar), exist_ok=True)
+    for radar in RADARS:
+        os.makedirs(os.path.join(OUTPUT_ROOT, 'radar', radar), exist_ok=True)
     os.makedirs(os.path.join(OUTPUT_ROOT, 'annotations'), exist_ok=True)
 
 def extract_images(nusc):
     print("\nExtracting camera images...")
-    for sd in tqdm(nusc.sample_data):
+    for sd in tqdm(nusc.sample_data, desc="Camera"):
         if sd['sensor_modality'] == 'camera' and sd['channel'] in CAMERAS:
             src = os.path.join(DATAROOT, sd['filename'])
             dst = os.path.join(OUTPUT_ROOT, 'camera', sd['channel'], sd['token'] + '.jpg')
@@ -53,7 +55,7 @@ def extract_images(nusc):
 
 def extract_lidar(nusc):
     print("\nExtracting lidar pointclouds...")
-    for sd in tqdm(nusc.sample_data):
+    for sd in tqdm(nusc.sample_data, desc="Lidar"):
         if sd['sensor_modality'] == 'lidar' and sd['channel'] in LIDARS:
             src = os.path.join(DATAROOT, sd['filename'])
             dst = os.path.join(OUTPUT_ROOT, 'lidar', sd['channel'], sd['token'] + '.pcd')
@@ -61,7 +63,7 @@ def extract_lidar(nusc):
 
 def extract_radar(nusc):
     print("\nExtracting radar data...")
-    for sd in tqdm(nusc.sample_data):
+    for sd in tqdm(nusc.sample_data, desc="Radar"):
         if sd['sensor_modality'] == 'radar' and sd['channel'] in RADARS:
             src = os.path.join(DATAROOT, sd['filename'])
             dst = os.path.join(OUTPUT_ROOT, 'radar', sd['channel'], sd['token'] + '.pcd')
@@ -70,7 +72,7 @@ def extract_radar(nusc):
 def extract_annotations(nusc):
     print("\nExtracting annotations...")
     anns = []
-    for ann in tqdm(nusc.sample_annotation):
+    for ann in tqdm(nusc.sample_annotation, desc="Annotations"):
         anns.append(ann)
     with open(os.path.join(OUTPUT_ROOT, 'annotations', 'sample_annotations.json'), 'w') as f:
         json.dump(anns, f)
