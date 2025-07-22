@@ -195,16 +195,9 @@ Silakan fork repo ini dan ajukan pull request.
 
 ---
 
-## 🛡️ Lisensi
-
-Proyek ini dirilis di bawah lisensi MIT.  
-Lihat file LICENSE untuk informasi lebih lanjut.
-
----
-
 ## 📞 Kontak
 
 Dikembangkan oleh:  
 **Yon Ekky Wijayanto**  
-📧 yonekkywijayanto@outlook.com
+📧 yonekkywijayanto@outlook.com  
 🌐 [LinkedIn](https://www.linkedin.com/in/yon-ekky-wijayanto-7008ab295/)
