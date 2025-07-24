@@ -3,13 +3,17 @@
 
 # Ignore all content inside data folder
 runs/
-data/
 scripts/training/models/
 
-# Keep the folder but ignore its contents:
-data/*
-!data/.gitkeep
+# Ignore all contents of data/ recursively
+data/**
+
+# But allow structure and specific file
+!data/
+!data/datasets/
+!data/datasets/camera/
 !data/datasets/camera/data.yaml
+!data/.gitkeep
 
 # Ignore typical dataset files
 *.bin

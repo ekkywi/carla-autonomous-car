@@ -1,7 +1,7 @@
 import os
 import time
-import yaml
 import pandas as pd
+import numpy as np
 from ultralytics import YOLO
 
 def clear():
@@ -38,13 +38,21 @@ def print_section(title):
     print(title)
     print("="*len(title))
 
-def print_training_summary(results, model_dir, start_time, end_time):
+def safe_float_fmt(val, fmt=".2f"):
+    try:
+        if val is None or val == "?":
+            return "?"
+        return format(float(val), fmt)
+    except Exception:
+        return str(val)
+
+def print_training_summary(results, val_results, model_dir, start_time, end_time):
     # Info model & kelas
-    names = getattr(results, "names", None)
+    names = getattr(val_results, "names", None)
     nc = len(names) if names else "?"
     model_param = "?"
     try:
-        model_obj = getattr(results, "model", None)
+        model_obj = getattr(val_results, "model", None)
         if model_obj:
             model_param = sum(p.numel() for p in model_obj.parameters()) / 1e6
     except Exception:
@@ -59,7 +67,7 @@ def print_training_summary(results, model_dir, start_time, end_time):
             df = pd.read_csv(csv_path)
             best_idx = df['metrics/mAP_0.5'].idxmax()
             best_epoch = int(df.iloc[best_idx]['epoch'])
-            best_map = float(df.iloc[best_idx]['metrics/mAP_0.5'])
+            best_map = df.iloc[best_idx]['metrics/mAP_0.5']
             total_time = df['epoch_time'].sum() if 'epoch_time' in df else None
             if total_time:
                 epoch_time = f"{total_time/3600:.2f} jam ({total_time/60:.0f} menit)"
@@ -69,24 +77,31 @@ def print_training_summary(results, model_dir, start_time, end_time):
         except Exception:
             pass
 
-    # Metrik utama dari results
-    box = getattr(results, "box", None)
-    map50 = float(getattr(box, "map50", 0.0)) if box else "?"
-    map5095 = float(getattr(box, "map", 0.0)) if box else "?"
-    precision = float(box.precision.mean()) if box and hasattr(box, "precision") and len(box.precision) else "?"
-    recall = float(box.recall.mean()) if box and hasattr(box, "recall") and len(box.recall) else "?"
+    # Metrik utama dari val_results
+    box = getattr(val_results, "box", None)
+    map50 = safe_float_fmt(getattr(box, "map50", "?")) if box else "?"
+    map5095 = safe_float_fmt(getattr(box, "map", "?")) if box else "?"
+    try:
+        precision = safe_float_fmt(np.mean(box.precision)) if box and hasattr(box, "precision") else "?"
+        recall = safe_float_fmt(np.mean(box.recall)) if box and hasattr(box, "recall") else "?"
+    except Exception:
+        precision = safe_float_fmt(box.precision.mean()) if box and hasattr(box, "precision") and hasattr(box.precision, "mean") else "?"
+        recall = safe_float_fmt(box.recall.mean()) if box and hasattr(box, "recall") and hasattr(box.recall, "mean") else "?"
 
     # Inference speed
-    speed = getattr(results, "speed", {}).get("inference", "?")
-    speed_str = f"{speed:.1f} ms/gambar" if isinstance(speed, float) else f"{speed} ms/gambar"
+    speed = getattr(val_results, "speed", {}).get("inference", "?")
+    try:
+        speed_str = f"{float(speed):.1f} ms/gambar"
+    except Exception:
+        speed_str = f"{speed} ms/gambar"
 
     # File model terbaik
     best_pt = os.path.join(model_dir, "weights", "best.pt")
 
     print("\n=== RINGKASAN HASIL TRAINING YOLOv8 ===")
     print(f"- Jumlah kelas         : {nc}         # Banyaknya kelas deteksi")
-    print(f"- Model parameter      : {model_param:.1f}M # Ukuran model (jutaan parameter)")
-    print(f"- Epoch terbaik        : {best_epoch if best_epoch is not None else '-'} (mAP50: {best_map if best_map is not None else '-'})")
+    print(f"- Model parameter      : {safe_float_fmt(model_param, '.1f')}M # Ukuran model (jutaan parameter)")
+    print(f"- Epoch terbaik        : {best_epoch if best_epoch is not None else '-'} (mAP50: {safe_float_fmt(best_map) if best_map is not None else '-'})")
     print(f"- Total waktu training : {epoch_time}")
     print(f"- Inference speed      : {speed_str}")
     print(f"- mAP50 (IoU 0.5)      : {map50}")
@@ -233,19 +248,22 @@ def main():
         print("Dibatalkan.")
         return
 
-    # Training
+    # Tentukan project_dir (history tetap, tidak pernah dihapus)
+    project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../runs/detect/camera"))
+
     print("\nMemulai training YOLOv8 ...\n")
     model_obj = YOLO(model)
-    project_dir = "../../../runs/detect/camera"
     train_kwargs = dict(
         data=dataset_yaml,
         epochs=epochs,
         imgsz=imgsz,
         batch=batch,
         project=project_dir,
+        # name dikosongkan supaya Ultralytics auto-buat train, train2, dst
         name="",
         workers=workers,
-        device=device
+        device=device,
+        amp=False
     )
     if lr:
         try:
@@ -258,16 +276,20 @@ def main():
     end_time = time.time()
     print("\nTraining selesai!")
 
-    # Cari folder training terakhir
+    # Cari folder training terbaru (train, train2, dst) untuk summary dan validasi
     try:
+        # Cari semua folder yang diawali 'train'
         candidates = [d for d in os.listdir(project_dir) if d.startswith("train")]
         if candidates:
             runs_path = os.path.join(project_dir, sorted(candidates, key=lambda x: int(''.join(filter(str.isdigit, x))) if any(i.isdigit() for i in x) else 0)[-1])
         else:
             runs_path = os.path.join(project_dir, "train")
-        # Ambil hasil validasi terbaru untuk summary
-        results_val = model_obj.val()
-        print_training_summary(results_val, runs_path, start_time, end_time)
+
+        # Jalankan validasi ulang pada model terbaik, output ke folder yang sama agar tidak buat train baru
+        weights_path = os.path.join(runs_path, "weights", "best.pt")
+        val_results = model_obj.val(model=weights_path, project=project_dir, name=os.path.basename(runs_path), exist_ok=True, amp=False)
+
+        print_training_summary(results, val_results, runs_path, start_time, end_time)
     except Exception as e:
         print("Gagal menampilkan ringkasan hasil training:", e)
 
