@@ -2,11 +2,14 @@
 .venv/
 
 # Ignore all content inside data folder
+runs/
 data/
+scripts/training/models/
 
 # Keep the folder but ignore its contents:
 data/*
 !data/.gitkeep
+!data/datasets/camera/data.yaml
 
 # Ignore typical dataset files
 *.bin
